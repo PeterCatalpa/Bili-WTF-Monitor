@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="referrer" content="no-referrer">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>B站问号风云榜</title>
+    <style>
+        :root {
+            --bili-pink: #fb7299;
+            --bili-blue: #00aeec;
+            --dark-bg: #1f2023;
+            --card-bg: #2d2e32;
+            --text-main: #e0e0e0;
+            --text-sec: #9499a0;
+            --rank-gold: #ffb700;
+            --rank-silver: #c0c0c0;
+            --rank-bronze: #b87333;
+        }
+        
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; background-color: var(--dark-bg); color: var(--text-main); margin: 0; padding: 20px; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        
+        header { text-align: center; margin-bottom: 30px; }
+        h1 { color: var(--bili-pink); font-size: 2.2em; margin-bottom: 20px; font-weight: 800; }
+        
+        /* 顶部控制栏 */
+        .controls { display: flex; flex-direction: column; align-items: center; gap: 15px; margin-bottom: 20px; }
+        
+        .tabs { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+        .tab-btn {
+            background: #333; border: 1px solid #444; color: #aaa; padding: 10px 20px; border-radius: 6px; 
+            cursor: pointer; font-size: 15px; font-weight: bold; transition: all 0.2s;
+            display: flex; align-items: center; gap: 5px;
+        }
+        .tab-btn:hover { background: #444; color: #fff; }
+        .tab-btn.active { 
+            background: var(--bili-pink); border-color: var(--bili-pink); color: #fff; 
+            box-shadow: 0 4px 12px rgba(251, 114, 153, 0.4); transform: translateY(-2px);
+        }
+        .tab-btn.blue-mode.active {
+            background: var(--bili-blue); border-color: var(--bili-blue); 
+            box-shadow: 0 4px 12px rgba(0, 174, 236, 0.4);
+        }
+
+        .refresh-btn {
+            background: transparent; border: 1px solid #555; color: var(--text-sec); padding: 5px 15px; border-radius: 20px;
+            font-size: 13px; cursor: pointer; transition: 0.2s;
+        }
+        .refresh-btn:hover { border-color: #888; color: #fff; }
+
+        .update-time { 
+            color: var(--text-sec); font-size: 0.9em; 
+            display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;
+        }
+        .stat-badge {
+            background: rgba(255,255,255,0.05); padding: 4px 10px; border-radius: 6px; 
+            border: 1px solid #333;
+        }
+
+        /* 瀑布流布局 Grid */
+        .card-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); 
+            gap: 25px; 
+            padding-top: 20px;
+            align-items: start; /* 顶部对齐 */
+        }
+
+        .video-card {
+            background: var(--card-bg); border-radius: 12px; overflow: hidden; 
+            transition: transform 0.2s, box-shadow 0.2s; 
+            height: auto; /* 高度自由 */
+            position: relative; display: flex; flex-direction: column;
+            border: 1px solid #3d3d3d;
+        }
+        .video-card:hover { transform: translateY(-5px); box-shadow: 0 10px 25px rgba(0,0,0,0.5); border-color: #555; }
+
+        .card-cover-box { position: relative; width: 100%; padding-top: 56.25%; background: #000; display: block; flex-shrink: 0; }
+        .card-cover { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; }
+        
+        .rank-badge {
+            position: absolute; top: 0; left: 0; padding: 4px 12px; border-bottom-right-radius: 12px;
+            font-size: 18px; font-weight: 900; color: #fff; background: rgba(0,0,0,0.7); z-index: 2; font-style: italic;
+            backdrop-filter: blur(4px); pointer-events: none;
+        }
+        .rank-1 { background: linear-gradient(135deg, #ffd700, #ffb700); color: #222; text-shadow: none; }
+        .rank-2 { background: linear-gradient(135deg, #e0e0e0, #c0c0c0); color: #222; text-shadow: none; }
+        .rank-3 { background: linear-gradient(135deg, #cd7f32, #b87333); color: #fff; }
+
+        .duration-badge {
+            position: absolute; bottom: 8px; right: 8px; background: rgba(0,0,0,0.65); color: #fff; 
+            padding: 2px 6px; border-radius: 4px; font-size: 12px; backdrop-filter: blur(2px); pointer-events: none;
+        }
+
+        .card-info { padding: 12px; display: flex; flex-direction: column; flex-grow: 1; }
+        
+        .card-title {
+            font-size: 15px; font-weight: 600; line-height: 1.4; color: #fff; margin-bottom: 8px;
+            display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-decoration: none;
+        }
+        .card-title:hover { color: var(--bili-blue); }
+
+        /* UP主样式 (无空行修复版) */
+        .card-up { 
+            font-size: 12px; color: var(--text-sec); 
+            display: block; 
+            margin-bottom: 12px; 
+            text-decoration: none; transition: color 0.2s; 
+            line-height: 1.5;
+        }
+        .up-badge {
+            border: 1px solid #666; border-radius: 3px; font-size: 10px; padding: 0 3px; margin-right: 6px; 
+            vertical-align: 1px; color: var(--text-sec);
+        }
+        .card-up:hover { color: var(--bili-pink); }
+        .card-up:hover .up-badge { border-color: var(--bili-pink); color: var(--bili-pink); }
+
+        .main-stat-box {
+            margin-top: auto; background: rgba(255, 255, 255, 0.04); border-radius: 8px; padding: 8px; margin-bottom: 10px; 
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .stat-group { text-align: center; flex: 1; }
+        .stat-label { font-size: 11px; color: var(--text-sec); margin-bottom: 2px; }
+        .stat-value { font-size: 18px; font-weight: 800; }
+        
+        .type-ratio .highlight { color: var(--bili-pink); }
+        .type-count .highlight { color: var(--bili-blue); }
+        .divider { width: 1px; height: 20px; background: #444; }
+
+        .sub-stats { display: flex; justify-content: space-between; font-size: 12px; color: #666; padding-top: 5px; border-top: 1px solid #333; }
+        .stat-item { display: flex; align-items: center; gap: 4px; }
+
+        /* 热评样式 */
+        .reply-box {
+            margin-top: 10px; padding: 8px; background: #222; border-radius: 6px; border-left: 3px solid #666;
+            font-size: 12px; color: #aaa; line-height: 1.4;
+            display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+        }
+
+        .trend-badge { position: absolute; top: 8px; right: 8px; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; z-index: 2; box-shadow: 0 2px 4px rgba(0,0,0,0.3); pointer-events: none; }
+        .t-new { background: #ffa502; color: #fff; }
+        .t-up { background: #ff4757; color: #fff; }
+        .t-down { background: rgba(0,0,0,0.6); color: #2ed573; }
+
+        #loading { text-align: center; padding: 50px; color: var(--text-sec); font-size: 1.2em; }
+        #error-msg { text-align: center; padding: 20px; color: #ff4757; display: none; }
+        .empty-state { text-align: center; padding: 40px; color: #666; border: 2px dashed #333; border-radius: 10px; margin-top: 20px;}
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>B站纯问号浓度风云榜</h1>
+        <div class="controls">
+            <div class="tabs">
+                <button class="tab-btn active" onclick="switchTab('month_ratio')">📅 本月·浓度榜</button>
+                <button class="tab-btn blue-mode" onclick="switchTab('month_count')">📅 本月·总量榜</button>
+                <button class="tab-btn" onclick="switchTab('all_ratio')">🏆 历史·浓度榜</button>
+                <button class="tab-btn blue-mode" onclick="switchTab('all_count')">🏆 历史·总量榜</button>
+            </div>
+            
+            <div class="update-time" id="updateTime">加载中...</div>
+            
+            <button class="refresh-btn" onclick="loadData()">🔄 手动刷新数据</button>
+        </div>
+    </header>
+
+    <div id="loading">数据读取中...</div>
+    <div id="error-msg"></div>
+
+    <div id="mainGrid" class="card-grid"></div>
+</div>
+
+<script>
+    const JSON_FILE = 'rank_report.json';
+    let globalData = null;
+    let currentTab = 'month_ratio'; 
+
+    async function loadData() {
+        if(!globalData) document.getElementById('loading').style.display = 'block';
+        
+        try {
+            const response = await fetch(JSON_FILE + '?t=' + new Date().getTime());
+            if (!response.ok) throw new Error('rank_report.json 尚未生成');
+            
+            const rawData = await response.json();
+            
+            if (Array.isArray(rawData)) {
+                // 兼容旧版数据结构
+                globalData = {
+                    update_time: rawData[0]?.update_time || '未知',
+                    total_history: rawData.length,
+                    active_sample: rawData.length,
+                    month_rank: rawData,
+                    all_rank: rawData
+                };
+            } else {
+                globalData = rawData;
+            }
+
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('error-msg').style.display = 'none';
+            
+            // [v19.0 核心] 解析并显示 Active 和 Archive 数据
+            const historyCount = globalData.total_history || globalData.total_sample || 0;
+            const activeCount = globalData.active_sample || globalData.total_sample || 0;
+            
+            document.getElementById('updateTime').innerHTML = `
+                <div class="stat-badge">📅 更新于: ${globalData.update_time}</div>
+                <div class="stat-badge" style="border-color: #fb7299;">
+                    <span style="color:var(--bili-pink); font-weight:bold;">🏛️ 馆藏总量: ${historyCount}</span>
+                </div>
+                <div class="stat-badge" style="border-color: #00aeec;">
+                    <span style="color:var(--bili-blue)">💾 活跃展示: ${activeCount}</span>
+                </div>
+            `;
+            
+            switchTab(currentTab);
+
+        } catch (error) {
+            document.getElementById('loading').style.display = 'none';
+            const errDiv = document.getElementById('error-msg');
+            errDiv.style.display = 'block';
+            errDiv.innerHTML = `<div class="empty-state">❌ 获取数据失败<br>${error.message}</div>`;
+        }
+    }
+
+    function switchTab(tabName) {
+        if (!globalData) return;
+        currentTab = tabName;
+
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        const btnIndex = ['month_ratio', 'month_count', 'all_ratio', 'all_count'].indexOf(tabName);
+        if(btnIndex >= 0) document.querySelectorAll('.tab-btn')[btnIndex].classList.add('active');
+
+        let source = [];
+        let type = 'ratio'; 
+
+        if (tabName.startsWith('month')) {
+            source = globalData.month_rank || [];
+        } else {
+            source = globalData.all_rank || [];
+        }
+
+        let renderList = [...source];
+        if (tabName.includes('count')) {
+            type = 'count';
+            renderList.sort((a, b) => b.q_mark_count - a.q_mark_count);
+        } else {
+            type = 'ratio';
+            renderList.sort((a, b) => b.ratio_percent - a.ratio_percent);
+        }
+
+        renderGrid(renderList.slice(0, 50), type);
+    }
+
+    function fmtNum(num) {
+        if (!num) return '-';
+        if (num > 100000000) return (num/100000000).toFixed(1) + '亿';
+        if (num > 10000) return (num/10000).toFixed(1) + '万';
+        return num;
+    }
+
+    function fmtTime(sec) {
+        if (!sec) return '';
+        const m = Math.floor(sec / 60);
+        const s = sec % 60;
+        return `${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
+    }
+
+    function renderGrid(data, type) {
+        const container = document.getElementById('mainGrid');
+        container.innerHTML = '';
+        container.className = `card-grid type-${type}`;
+
+        if (data.length === 0) {
+            container.innerHTML = `<div class="empty-state" style="grid-column: 1/-1;">暂无数据<br>后台可能正在努力抓取中...</div>`;
+            return;
+        }
+        
+        data.forEach((item, index) => {
+            const rank = index + 1;
+            
+            let trend = 'new';
+            if (item.ratio_trend !== undefined) {
+                 trend = type === 'ratio' ? item.ratio_trend : item.count_trend;
+            }
+            let trendHtml = '';
+            if (trend === 'new') trendHtml = `<div class="trend-badge t-new">NEW</div>`;
+            else if (trend > 0) trendHtml = `<div class="trend-badge t-up">▲${trend}</div>`;
+            else if (trend < 0) trendHtml = `<div class="trend-badge t-down">▼${Math.abs(trend)}</div>`;
+
+            const valRatio = `${item.ratio_percent.toFixed(2)}%`;
+            const valCount = fmtNum(item.q_mark_count);
+
+            let picUrl = item.pic || '';
+            if (picUrl.startsWith('http:')) picUrl = picUrl.replace('http:', 'https:');
+            
+            let upLink = '#';
+            if (item.owner_mid) {
+                upLink = `https://space.bilibili.com/${item.owner_mid}`;
+            } else {
+                upLink = `https://search.bilibili.com/upuser?keyword=${encodeURIComponent(item.owner)}`;
+            }
+
+            let replyHtml = '';
+            if (item.top_reply) {
+                replyHtml = `<div class="reply-box" title="${item.top_reply}">${item.top_reply}</div>`;
+            }
+
+            const card = document.createElement('div');
+            card.className = 'video-card';
+            card.innerHTML = `
+                <a href="https://www.bilibili.com/video/av${item.aid}" target="_blank" class="card-cover-box">
+                    <img data-src="${picUrl}" class="card-cover lazy">
+                    <div class="rank-badge rank-${rank}">${rank}</div>
+                    <div class="duration-badge">${fmtTime(item.duration)}</div>
+                    ${trendHtml}
+                </a>
+                <div class="card-info">
+                    <a href="https://www.bilibili.com/video/av${item.aid}" target="_blank" class="card-title" title="${item.title}">${item.title}</a>
+                    
+                    <a href="${upLink}" target="_blank" class="card-up" title="访问UP主主页">
+                        <span class="up-badge">UP</span><span>${item.owner || '未知'}</span>
+                    </a>
+                    
+                    <div class="main-stat-box">
+                        <div class="stat-group">
+                            <div class="stat-value ${type === 'ratio' ? 'highlight' : ''}">${valRatio}</div>
+                            <div class="stat-label">浓度</div>
+                        </div>
+                        <div class="divider"></div>
+                        <div class="stat-group">
+                            <div class="stat-value ${type === 'count' ? 'highlight' : ''}">${valCount}</div>
+                            <div class="stat-label">问号数</div>
+                        </div>
+                    </div>
+                    
+                    <div class="sub-stats">
+                        <div class="stat-item" title="播放量"><span>👁️</span> ${fmtNum(item.view)}</div>
+                        <div class="stat-item" title="总弹幕"><span>💬</span> ${fmtNum(item.total_danmaku)}</div>
+                    </div>
+
+                    ${replyHtml}
+                </div>
+            `;
+            container.appendChild(card);
+        });
+        
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const img = entry.target;
+                    img.src = img.dataset.src;
+                    observer.unobserve(img);
+                }
+            });
+        });
+        container.querySelectorAll('.lazy').forEach(img => observer.observe(img));
+    }
+
+    loadData();
+</script>
+</body>
+</html>
