@@ -32,7 +32,7 @@
 ### 1. 环境准备
 确保你的环境已安装 Python 3.8+ 和 Git。
 ```bash
-git clone [https://github.com/YourUsername/Bili-WTF-Monitor.git](https://github.com/YourUsername/Bili-WTF-Monitor.git)
+git clone https://github.com/PeterCatalpa/Bili-WTF-Monitor.git
 cd Bili-WTF-Monitor
 pip install requests brotli user-agent qrcode
 
@@ -48,7 +48,7 @@ pip install requests brotli user-agent qrcode
 
 ```python
 # [初始化] 请将下方链接替换为你的 GitHub 仓库地址
-REPO_URL = "[https://github.com/你的用户名/你的仓库名.git](https://github.com/你的用户名/你的仓库名.git)"
+REPO_URL = "https://github.com/你的用户名/你的仓库名.git"
 
 # [初始化] 目标分支，通常为 gh-pages
 TARGET_BRANCH = "gh-pages"
@@ -140,5 +140,6 @@ python git_sync.py
 ## 📜 免责声明
 
 本项目仅供 Python 编程学习与数据分析研究使用。请严格遵守 [Bilibili 用户协议](https://www.bilibili.com/protocal/licence.html) 及 [Robots 协议](https://www.bilibili.com/robots.txt)。严禁将本项目用于任何商业用途、恶意抓取或网络攻击。
+
 
 
