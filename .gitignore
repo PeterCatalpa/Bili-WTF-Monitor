@@ -1,0 +1,10 @@
+# === 核心隐私保护 (User Secrets) ===
+cookies.json
+__pycache__/
+*.pyc
+venv/
+.env
+
+# === 系统文件 ===
+.DS_Store
+Thumbs.db
