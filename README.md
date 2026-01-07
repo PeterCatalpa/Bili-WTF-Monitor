@@ -124,17 +124,12 @@ python git_sync.py
 
 ## ⚠️ 常见问题
 
-1. **为什么 GitHub 上的记录被覆盖了？**
-
-* `git_sync.py` 使用了 **Force Push (`git push -f`)**，以确保 Dashboard 始终展示本地最新状态。请勿在 GitHub 网页端手动修改文件。
-
-
-2. **图片加载失败？**
+1. **图片加载失败？**
 
 * B 站图片有防盗链机制，`index.html` 头部必须包含 `<meta name="referrer" content="no-referrer">`。
 
 
-3. **风控 (412/403错误)**
+2. **风控 (412/403错误)**
 
 * 如果日志中频繁出现错误，请重新运行 `python login.py` 更新 Cookie。
 
@@ -145,4 +140,5 @@ python git_sync.py
 ## 📜 免责声明
 
 本项目仅供 Python 编程学习与数据分析研究使用。请严格遵守 [Bilibili 用户协议](https://www.bilibili.com/protocal/licence.html) 及 [Robots 协议](https://www.bilibili.com/robots.txt)。严禁将本项目用于任何商业用途、恶意抓取或网络攻击。
+
 
