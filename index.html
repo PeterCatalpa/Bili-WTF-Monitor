@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="referrer" content="no-referrer">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>B站问号风云榜</title>
+    <title>异常弹幕档案馆 | Anomaly Archive</title>
     <style>
         /* === 现代色彩与变量系统 === */
         :root {
@@ -280,7 +280,9 @@
 <div class="container">
     <header>
         <button class="theme-toggle-btn" onclick="toggleTheme()" id="themeBtn" title="切换主题">🌙</button>
-        <h1>Bili-WTF <span>风云榜</span></h1>
+        
+        <h1>Anomaly <span>Archive</span></h1>
+        <p style="color: var(--text-sec); font-size: 14px; margin-top: -20px; margin-bottom: 30px;">Bilibili 弹幕异常波动监测终端</p>
         
         <div class="controls">
             <div class="tabs">
@@ -302,7 +304,7 @@
         </div>
     </header>
 
-    <div id="loading">📡 正在接收脑电波...</div>
+    <div id="loading">📡 正在接收异常数据流...</div>
     <div id="error-msg"></div>
     <div id="mainGrid" class="card-grid"></div>
 </div>
@@ -313,12 +315,11 @@
     let currentTab = 'month_ratio'; 
     let isViewingHistory = false;
 
-    // === 主题切换核心逻辑 (去掉了 Auto，只保留 Dark/Light) ===
+    // === 主题切换核心逻辑 ===
     const themeBtn = document.getElementById('themeBtn');
     
     function initTheme() {
         const savedTheme = localStorage.getItem('theme');
-        // 如果没有保存的记录，优先跟随系统，系统是浅色就浅色，否则深色
         if (!savedTheme) {
             const prefersLight = window.matchMedia('(prefers-color-scheme: light)').matches;
             applyTheme(prefersLight ? 'light' : 'dark');
@@ -333,7 +334,7 @@
             themeBtn.innerText = '☀️';
             localStorage.setItem('theme', 'light');
         } else {
-            document.documentElement.removeAttribute('data-theme'); // 默认就是 dark
+            document.documentElement.removeAttribute('data-theme');
             themeBtn.innerText = '🌙';
             localStorage.setItem('theme', 'dark');
         }
@@ -362,8 +363,8 @@
         
         try {
             const response = await fetch(targetFile + '?t=' + new Date().getTime());
-            if (response.status === 404) throw new Error('未找到该日期的存档数据');
-            if (!response.ok) throw new Error('数据加载失败');
+            if (response.status === 404) throw new Error('未找到该日期的收容记录');
+            if (!response.ok) throw new Error('数据同步失败');
             
             const rawData = await response.json();
             if (Array.isArray(rawData)) {
@@ -385,7 +386,7 @@
         } catch (error) {
             loading.style.display = 'none';
             errorMsg.style.display = 'block';
-            errorMsg.innerHTML = `<div class="empty-state"><h3>❌ 数据库连接中断</h3><p>${error.message}</p><p style="font-size:12px; margin-top:10px;">可能这一天的监控探头睡着了</p></div>`;
+            errorMsg.innerHTML = `<div class="empty-state"><h3>❌ 监测终端连接中断</h3><p>${error.message}</p><p style="font-size:12px; margin-top:10px;">可能当前时间线的数据尚未收容</p></div>`;
         }
     }
 
@@ -411,10 +412,10 @@
 
     function updateStatusUI() {
         const count = globalData.total_history || globalData.total_sample || 0;
-        const timeLabel = isViewingHistory ? '📜 存档快照' : '📅 实时更新';
+        const timeLabel = isViewingHistory ? '📜 历史档案' : '📅 实时监测';
         document.getElementById('updateTime').innerHTML = `
             <div class="stat-badge">${timeLabel}: <strong>${globalData.update_time}</strong></div>
-            <div class="stat-badge">🏛️ 馆藏总量: <strong style="color:var(--text-main);">${count}</strong></div>
+            <div class="stat-badge">🏛️ 档案总量: <strong style="color:var(--text-main);">${count}</strong></div>
         `;
     }
 
@@ -455,7 +456,7 @@
         container.className = `card-grid type-${type}`;
 
         if (data.length === 0) {
-            container.innerHTML = `<div class="empty-state">暂无符合条件的数据</div>`;
+            container.innerHTML = `<div class="empty-state">当前档案库暂无符合条件的数据</div>`;
             return;
         }
         
@@ -497,17 +498,17 @@
                     <div class="main-stat-box">
                         <div class="stat-group">
                             <div class="stat-value ${type === 'ratio' ? 'highlight' : ''}">${valRatio}</div>
-                            <div class="stat-label">问号浓度</div>
+                            <div class="stat-label">异常浓度</div>
                         </div>
                         <div class="divider"></div>
                         <div class="stat-group">
                             <div class="stat-value ${type === 'count' ? 'highlight' : ''}">${valCount}</div>
-                            <div class="stat-label">总问号数</div>
+                            <div class="stat-label">异常总数</div>
                         </div>
                     </div>
                     <div class="sub-stats">
-                        <div>播放 ${fmtNum(item.view)}</div>
-                        <div>弹幕 ${fmtNum(item.total_danmaku)}</div>
+                        <div>观测 ${fmtNum(item.view)}</div>
+                        <div>记录 ${fmtNum(item.total_danmaku)}</div>
                     </div>
                     ${replyHtml}
                 </div>
